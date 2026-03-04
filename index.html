@@ -145,11 +145,14 @@
             updateBannerVisibility();
         }
 
-        // Funkcja do kontynuowania gry
+        // Funkcja do kontynuowania gry (bez reklam)
         function continueGame() {
             console.log("✅ Gra kontynuuje się...");
             if (typeof myGameInstance !== 'undefined' && myGameInstance) {
+                // Spróbuj wszystkie możliwe ścieżki
+                myGameInstance.SendMessage('GameManager', 'ContinueGame');
                 myGameInstance.SendMessage('UIManager', 'ContinueGame');
+                myGameInstance.SendMessage('Manager', 'ContinueGame');
             }
         }
 
