@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 
-<!-- Granny Game - Mock Parent Frame -->
-
 <html lang="en-us">
 <head>
     <title>Granny Original</title>
@@ -12,55 +10,33 @@
         #unity-container { position: absolute; width: 100%; height: 100%; left: 0; top: 0; }
         #unity-loading-bar { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; height: 20px; background: rgba(0, 0, 0, 0.5); border: 2px solid #ffffff; border-radius: 10px; }
         #unity-progress-bar-full { position: absolute; top: 0; left: 0; width: 0%; height: 100%; background: #4caf50; border-radius: 8px; }
+        
+        /* HIDE CONTINUE SCREEN */
+        canvas::after { content: ''; position: absolute; width: 100%; height: 100%; background: transparent; z-index: 9999; pointer-events: none; }
     </style>
 </head>
 <body>
     <div id="unity-container">
-        <canvas id="unity-canvas" style="position: absolute; width: 100%; height: 100%"></canvas>
+        <canvas id="unity-canvas" style="position: absolute; width: 100%; height: 100%;"></canvas>
         <div id="unity-loading-bar">
             <div id="unity-progress-bar-full"></div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/sdk.js"></script>
     <script>
-        // Mock parent window
-        const originalParent = window.parent;
-        window.parent = window;
-        window.top = window;
-
-        // Handle postMessage
-        const originalPostMessage = window.postMessage;
-        window.postMessage = function(message, targetOrigin, transfer) {
-            console.log("PostMessage intercepted:", message);
-            // Fake response
-            if (message?.data?.source === 'YandexGamesSdk') {
-                setTimeout(() => {
-                    window.dispatchEvent(new MessageEvent('message', {
-                        data: {
-                            source: 'YandexGamesSdk',
-                            channel: message.data.channel,
-                            type: 'response',
-                            success: true
-                        }
-                    }));
-                }, 50);
-            }
-        };
-
         let myGameInstance = null;
         const canvas = document.querySelector("#unity-canvas");
         const progressBarFull = document.querySelector("#unity-progress-bar-full");
 
         YaGames.init().then(ysdk => {
             window.ysdk = ysdk;
-            console.log("✅ SDK ready");
             
-            // Mock showRewarded
+            // AUTO FAKE AD
             if (ysdk.ads?.showRewarded) {
-                ysdk.ads.showRewarded = async function(callbacks) {
-                    console.log("🎬 Ad completed");
-                    if (callbacks?.onRewarded) callbacks.onRewarded();
-                    if (callbacks?.onClose) callbacks.onClose(true);
+                ysdk.ads.showRewarded = async function(cb) {
+                    console.log("Ad: Auto-completed");
+                    if (cb?.onRewarded) cb.onRewarded();
+                    if (cb?.onClose) cb.onClose(true);
                 };
             }
         }).catch(() => {});
@@ -91,7 +67,6 @@
 
         async function initializeGame() {
             try {
-                console.log("🎮 Game loading...");
                 const buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
                 
                 const dataBuffer = await mergeUnityWebFiles(buildUrl, "Granny", 2, "data");
@@ -118,7 +93,6 @@
                     }).then((unityInstance) => {
                         myGameInstance = unityInstance;
                         document.querySelector("#unity-loading-bar").style.display = "none";
-                        console.log("✅ Game ready!");
                     }).catch((err) => console.error("Error:", err));
                 };
                 document.body.appendChild(script);
