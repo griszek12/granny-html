@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Granny Game - Skip Death Screen -->
+<!-- Granny Game - Mock Parent Frame -->
 
 <html lang="en-us">
 <head>
@@ -23,26 +23,44 @@
     </div>
     <script src="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/sdk.js"></script>
     <script>
+        // Mock parent window
+        const originalParent = window.parent;
+        window.parent = window;
+        window.top = window;
+
+        // Handle postMessage
+        const originalPostMessage = window.postMessage;
+        window.postMessage = function(message, targetOrigin, transfer) {
+            console.log("PostMessage intercepted:", message);
+            // Fake response
+            if (message?.data?.source === 'YandexGamesSdk') {
+                setTimeout(() => {
+                    window.dispatchEvent(new MessageEvent('message', {
+                        data: {
+                            source: 'YandexGamesSdk',
+                            channel: message.data.channel,
+                            type: 'response',
+                            success: true
+                        }
+                    }));
+                }, 50);
+            }
+        };
+
         let myGameInstance = null;
         const canvas = document.querySelector("#unity-canvas");
         const progressBarFull = document.querySelector("#unity-progress-bar-full");
 
-        // Setup SDK early
-        window.YaGames = window.YaGames || {};
-        
         YaGames.init().then(ysdk => {
             window.ysdk = ysdk;
-            console.log("✅ SDK initialized");
+            console.log("✅ SDK ready");
             
-            // Intercept showRewarded - automatically complete it
+            // Mock showRewarded
             if (ysdk.ads?.showRewarded) {
                 ysdk.ads.showRewarded = async function(callbacks) {
-                    console.log("🎬 Fake ad - auto completing");
-                    setTimeout(() => {
-                        if (callbacks?.onRewarded) callbacks.onRewarded();
-                        if (callbacks?.onClose) callbacks.onClose(true);
-                    }, 100);
-                    return { success: true };
+                    console.log("🎬 Ad completed");
+                    if (callbacks?.onRewarded) callbacks.onRewarded();
+                    if (callbacks?.onClose) callbacks.onClose(true);
                 };
             }
         }).catch(() => {});
