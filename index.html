@@ -158,16 +158,42 @@
 
         // Funkcja do kontynuowania gry
         function continueGame() {
-            console.log("✅ Gra kontynuuje się...");
+            console.log("✅ AUTO CONTINUE - Gra kontynuuje się automatycznie!");
             if (typeof myGameInstance !== 'undefined' && myGameInstance) {
-                myGameInstance.SendMessage('GameManager', 'ContinueGame');
-                myGameInstance.SendMessage('UIManager', 'ContinueGame');
+                // Wyślij do wszystkich możliwych targetów
+                const targets = [
+                    'GameManager', 'UIManager', 'Manager', 'GameController',
+                    'DeathScreen', 'ScreenManager', 'UI', 'MainController'
+                ];
+                
+                targets.forEach(obj => {
+                    try {
+                        myGameInstance.SendMessage(obj, 'ContinueGame');
+                        myGameInstance.SendMessage(obj, 'OnContinue');
+                        myGameInstance.SendMessage(obj, 'Continue');
+                    } catch (e) {}
+                });
             }
         }
 
+        // AUTO CONTINUE - symuluj kliknięcie co 100ms
+        let autoContinueInterval = null;
+        function startAutoContinue() {
+            if (autoContinueInterval) clearInterval(autoContinueInterval);
+            autoContinueInterval = setInterval(() => {
+                continueGame();
+            }, 100);
+        }
+
+        // Słuchaj zmian w DOM - gdy pojawi się ekran continue
+        const observer = new MutationObserver(() => {
+            console.log("DOM zmienił się - spróbuję auto-continue");
+            startAutoContinue();
+        });
+
         // Expose funkcji dla gry
         window.continueGame = continueGame;
-        window.onContinueGame = continueGame;
+        window.startAutoContinue = startAutoContinue;
 
         var buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
         var loaderUrl = buildUrl + "/Granny.loader.js";
@@ -202,6 +228,15 @@
                         myGameInstance = unityInstance;
                         loadingBar.style.display = "none";
                         console.log("✅ Gra załadowana pomyślnie!");
+                        
+                        // Uruchom auto-continue observer
+                        observer.observe(canvas, {
+                            childList: true,
+                            subtree: true,
+                            attributes: true,
+                            characterData: true
+                        });
+                        startAutoContinue();
                     }).catch((message) => {
                         console.error("❌ Błąd:", message);
                         alert("Błąd ładowania gry: " + message);
