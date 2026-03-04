@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 
-<!-- Granny Game - Auto Continue by Faking Ad Complete -->
+<!-- Granny Game - Skip Death Screen -->
 
 <html lang="en-us">
 <head>
     <title>Granny Original</title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/TemplateData/style.css">
-    <script src="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/sdk.js"></script>
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background: url('https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/background.png') no-repeat center center fixed; background-size: cover; }
         #unity-container { position: absolute; width: 100%; height: 100%; left: 0; top: 0; }
@@ -22,22 +21,31 @@
             <div id="unity-progress-bar-full"></div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/sdk.js"></script>
     <script>
-        // Intercept SDK showRewarded - fake complete immediately
+        let myGameInstance = null;
+        const canvas = document.querySelector("#unity-canvas");
+        const progressBarFull = document.querySelector("#unity-progress-bar-full");
+
+        // Setup SDK early
+        window.YaGames = window.YaGames || {};
+        
         YaGames.init().then(ysdk => {
             window.ysdk = ysdk;
             console.log("✅ SDK initialized");
             
-            // Override showRewarded
-            const originalShowRewarded = ysdk.ads.showRewarded;
-            ysdk.ads.showRewarded = function(callbacks) {
-                console.log("🎬 Fake ad - auto completing!");
-                if (callbacks && callbacks.onOpen) callbacks.onOpen();
-                if (callbacks && callbacks.onClose) callbacks.onClose(true);
-                if (callbacks && callbacks.onRewarded) callbacks.onRewarded();
-                return Promise.resolve();
-            };
-        }).catch(err => console.error("SDK error:", err));
+            // Intercept showRewarded - automatically complete it
+            if (ysdk.ads?.showRewarded) {
+                ysdk.ads.showRewarded = async function(callbacks) {
+                    console.log("🎬 Fake ad - auto completing");
+                    setTimeout(() => {
+                        if (callbacks?.onRewarded) callbacks.onRewarded();
+                        if (callbacks?.onClose) callbacks.onClose(true);
+                    }, 100);
+                    return { success: true };
+                };
+            }
+        }).catch(() => {});
 
         async function mergeUnityWebFiles(baseUrl, filePrefix, totalParts, extension) {
             const partUrls = [];
@@ -63,44 +71,41 @@
             return combinedBuffer;
         }
 
-        let myGameInstance = null;
-        const canvas = document.querySelector("#unity-canvas");
-        const progressBarFull = document.querySelector("#unity-progress-bar-full");
-
         async function initializeGame() {
             try {
-                console.log("🎮 Ładowanie gry...");
-                const dataBuffer = await mergeUnityWebFiles("https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build", "Granny", 2, "data");
-                const wasmBuffer = await mergeUnityWebFiles("https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build", "Granny", 2, "wasm");
+                console.log("🎮 Game loading...");
+                const buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
+                
+                const dataBuffer = await mergeUnityWebFiles(buildUrl, "Granny", 2, "data");
+                const wasmBuffer = await mergeUnityWebFiles(buildUrl, "Granny", 2, "wasm");
+                
                 const dataBlobUrl = URL.createObjectURL(new Blob([dataBuffer], { type: "application/octet-stream" }));
                 const wasmBlobUrl = URL.createObjectURL(new Blob([wasmBuffer], { type: "application/octet-stream" }));
 
-                var config = {
+                const config = {
                     dataUrl: dataBlobUrl,
-                    frameworkUrl: "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build/Granny.framework.js",
+                    frameworkUrl: buildUrl + "/Granny.framework.js",
                     codeUrl: wasmBlobUrl,
-                    streamingAssetsUrl: "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/StreamingAssets",
+                    streamingAssetsUrl: buildUrl + "/StreamingAssets",
                     companyName: "Anastasia Kazantseva",
                     productName: "Granny",
                     productVersion: "1.0",
                 };
 
-                var script = document.createElement("script");
-                script.src = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build/Granny.loader.js";
+                const script = document.createElement("script");
+                script.src = buildUrl + "/Granny.loader.js";
                 script.onload = () => {
                     createUnityInstance(canvas, config, (progress) => {
-                        progressBarFull.style.width = 100 * progress + "%";
+                        progressBarFull.style.width = (100 * progress) + "%";
                     }).then((unityInstance) => {
                         myGameInstance = unityInstance;
                         document.querySelector("#unity-loading-bar").style.display = "none";
-                        console.log("✅ Gra załadowana!");
-                    }).catch((message) => {
-                        console.error("❌ Błąd:", message);
-                    });
+                        console.log("✅ Game ready!");
+                    }).catch((err) => console.error("Error:", err));
                 };
                 document.body.appendChild(script);
             } catch (error) {
-                console.error("❌ Błąd inicjalizacji:", error);
+                console.error("Init error:", error);
             }
         }
 
