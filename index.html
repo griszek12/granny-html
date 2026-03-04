@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Granny Game - Clean Version (No Ads) -->
+<!-- Granny Game - Yandex SDK Version -->
 
 <html lang="en-us">
 <head>
@@ -89,6 +89,17 @@
         <div id="unity-warning"></div>
     </div>
     <script>
+        // Yandex SDK Handler
+        window.ysdk = null;
+        
+        // Initialize Yandex SDK
+        YaGames.init().then(ysdk => {
+            window.ysdk = ysdk;
+            console.log("✅ Yandex SDK initialized");
+        }).catch(err => {
+            console.error("❌ Yandex SDK init error:", err);
+        });
+
         async function mergeUnityWebFiles(baseUrl, filePrefix, totalParts, extension) {
             const partUrls = [];
             for (let i = 1; i <= totalParts; i++) {
@@ -145,70 +156,18 @@
             updateBannerVisibility();
         }
 
-        // Funkcja do kontynuowania gry (bez reklam)
+        // Funkcja do kontynuowania gry
         function continueGame() {
-            console.log("✅ continueGame() called!");
-            console.log("myGameInstance:", myGameInstance);
-            
+            console.log("✅ Gra kontynuuje się...");
             if (typeof myGameInstance !== 'undefined' && myGameInstance) {
-                console.log("Trying to send messages...");
-                
-                // Lista wszystkich możliwych ścieżek
-                const targets = [
-                    ['GameManager', 'ContinueGame'],
-                    ['UIManager', 'ContinueGame'],
-                    ['Manager', 'ContinueGame'],
-                    ['UIManager', 'OnContinuePressed'],
-                    ['GameController', 'ContinueGame'],
-                    ['GameManager', 'OnContinue'],
-                    ['UI', 'Continue'],
-                    ['ScreenManager', 'ContinueGame'],
-                    ['DeathScreen', 'Continue'],
-                    ['MainController', 'ContinueGame'],
-                ];
-                
-                targets.forEach(([obj, method]) => {
-                    try {
-                        console.log(`Sending: ${obj}.${method}`);
-                        myGameInstance.SendMessage(obj, method);
-                    } catch (e) {
-                        console.log(`Failed: ${obj}.${method} -`, e.message);
-                    }
-                });
-            } else {
-                console.error("❌ myGameInstance is not initialized!");
+                myGameInstance.SendMessage('GameManager', 'ContinueGame');
+                myGameInstance.SendMessage('UIManager', 'ContinueGame');
             }
         }
-
-        // Obsługa komunikatów z gry/SDK
-        window.addEventListener('message', (event) => {
-            console.log('Message received from game:', event.data);
-            
-            // Obsłuż wiadomości SDK
-            if (event.data && event.data.source === 'YandexGamesSdk') {
-                console.log('SDK Message:', event.data.actionName);
-                
-                // Odpowiedź na SDK
-                if (event.ports && event.ports[0]) {
-                    event.ports[0].postMessage({
-                        type: 'response',
-                        success: true
-                    });
-                }
-            }
-            
-            // Obsłuż continue game
-            if (event.data === 'continue_game' || event.data?.type === 'continue') {
-                continueGame();
-            }
-        });
 
         // Expose funkcji dla gry
         window.continueGame = continueGame;
         window.onContinueGame = continueGame;
-        window.ContinueGame = continueGame;
-        window.showContinueAd = continueGame;
-        window.onShowRewardedVideo = continueGame;
 
         var buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
         var loaderUrl = buildUrl + "/Granny.loader.js";
@@ -251,13 +210,11 @@
 
                 script.onerror = () => {
                     console.error("❌ Błąd załadowania skryptu");
-                    alert("Błąd załadowania. Spróbuj odświeżyć stronę.");
                 };
 
                 document.body.appendChild(script);
             } catch (error) {
                 console.error("❌ Błąd inicjalizacji:", error);
-                alert("Błąd inicjalizacji: " + error.message);
             }
         }
 
