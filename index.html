@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Granny Game - Clean Version (No Ads) -->
+<!-- Granny Game - GitHub Pages Version with Debug -->
 
 <html lang="en-us">
 <head>
@@ -147,21 +147,43 @@
 
         // Funkcja do kontynuowania gry (bez reklam)
         function continueGame() {
-            console.log("✅ Gra kontynuuje się...");
+            console.log("✅ continueGame() called!");
+            console.log("myGameInstance:", myGameInstance);
+            
             if (typeof myGameInstance !== 'undefined' && myGameInstance) {
-                // Spróbuj wszystkie możliwe ścieżki
-                myGameInstance.SendMessage('GameManager', 'ContinueGame');
-                myGameInstance.SendMessage('UIManager', 'ContinueGame');
-                myGameInstance.SendMessage('Manager', 'ContinueGame');
-                myGameInstance.SendMessage('UIManager', 'OnContinuePressed');
-                myGameInstance.SendMessage('GameController', 'ContinueGame');
+                console.log("Trying to send messages...");
+                
+                // Lista wszystkich możliwych ścieżek
+                const targets = [
+                    ['GameManager', 'ContinueGame'],
+                    ['UIManager', 'ContinueGame'],
+                    ['Manager', 'ContinueGame'],
+                    ['UIManager', 'OnContinuePressed'],
+                    ['GameController', 'ContinueGame'],
+                    ['GameManager', 'OnContinue'],
+                    ['UI', 'Continue'],
+                    ['ScreenManager', 'ContinueGame'],
+                    ['DeathScreen', 'Continue'],
+                    ['MainController', 'ContinueGame'],
+                ];
+                
+                targets.forEach(([obj, method]) => {
+                    try {
+                        console.log(`Sending: ${obj}.${method}`);
+                        myGameInstance.SendMessage(obj, method);
+                    } catch (e) {
+                        console.log(`Failed: ${obj}.${method} -`, e.message);
+                    }
+                });
+            } else {
+                console.error("❌ myGameInstance is not initialized!");
             }
         }
 
         // Obsługa komunikatów z gry
         window.addEventListener('message', (event) => {
-            console.log('Message received:', event.data);
-            if (event.data === 'continue_game' || event.data.type === 'continue') {
+            console.log('Message received from game:', event.data);
+            if (event.data === 'continue_game' || event.data?.type === 'continue') {
                 continueGame();
             }
         });
@@ -170,6 +192,8 @@
         window.continueGame = continueGame;
         window.onContinueGame = continueGame;
         window.ContinueGame = continueGame;
+        window.showContinueAd = continueGame;
+        window.onShowRewardedVideo = continueGame;
 
         var buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
         var loaderUrl = buildUrl + "/Granny.loader.js";
