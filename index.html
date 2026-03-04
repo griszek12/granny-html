@@ -3,9 +3,7 @@
 <html lang="en-us">
 <head>
     <meta charset="utf-8"/>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Granny Original</title>
-    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/TemplateData/favicon.ico"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bubbls/ruffle@895d0224580381ddd003fc2ab72afead3cf134ad/john.css"/>
 </head>
 <body>
@@ -17,55 +15,17 @@
                 <div id="unity-progress-bar-full"></div>
             </div>
         </div>
-        <div id="unity-warning"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/sdk.js"></script>
     <script>
-        YaGames.init().then(ysdk => {
-            console.log('✅ Yandex SDK initialized');
-            window.ysdk = ysdk;
-            initPlayer();
-        });
-
-        var player;
-        function initPlayer() {
-            return ysdk.getPlayer({ scopes: false }).then(_player => {
-                player = _player;
-                return player;
-            });
-        }
-    </script>
-
-    <script>
-        var container = document.querySelector("#unity-container");
         var canvas = document.querySelector("#unity-canvas");
         var loadingBar = document.querySelector("#unity-loading-bar");
         var progressBarFull = document.querySelector("#unity-progress-bar-full");
-        var warningBanner = document.querySelector("#unity-warning");
-
-        function unityShowBanner(msg, type) {
-            function updateBannerVisibility() {
-                warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-            }
-            var div = document.createElement('div');
-            div.innerHTML = msg;
-            warningBanner.appendChild(div);
-            if (type == 'error') div.style = 'background: red; padding: 10px;';
-            else {
-                if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-                setTimeout(function() {
-                    warningBanner.removeChild(div);
-                    updateBannerVisibility();
-                }, 5000);
-            }
-            updateBannerVisibility();
-        }
 
         async function mergeFiles(parts, onProgress) {
             let loaded = 0;
             const total = parts.length;
-            const blobs = await Promise.all(parts.map(async (part, index) => {
+            const blobs = await Promise.all(parts.map(async (part) => {
                 const res = await fetch(part);
                 const blob = await res.blob();
                 loaded++;
@@ -79,23 +39,19 @@
             var buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
             var loaderUrl = buildUrl + "/Granny.loader.js";
 
-            var dataParts = [
-                buildUrl + "/Granny_part1.data",
-                buildUrl + "/Granny_part2.data"
-            ];
-
-            var wasmParts = [
-                buildUrl + "/Granny_part1.wasm",
-                buildUrl + "/Granny_part2.wasm"
-            ];
-
             loadingBar.style.display = "block";
 
-            var dataUrl = await mergeFiles(dataParts, progress => {
+            var dataUrl = await mergeFiles([
+                buildUrl + "/Granny_part1.data",
+                buildUrl + "/Granny_part2.data"
+            ], progress => {
                 progressBarFull.style.width = (50 * progress) + "%";
             });
 
-            var wasmUrl = await mergeFiles(wasmParts, progress => {
+            var wasmUrl = await mergeFiles([
+                buildUrl + "/Granny_part1.wasm",
+                buildUrl + "/Granny_part2.wasm"
+            ], progress => {
                 progressBarFull.style.width = (50 + 50 * progress) + "%";
             });
 
@@ -107,7 +63,6 @@
                 companyName: "Anastasia Kazantseva",
                 productName: "Granny",
                 productVersion: "1.0",
-                showBanner: unityShowBanner,
             };
 
             var script = document.createElement("script");
@@ -116,7 +71,6 @@
                 createUnityInstance(canvas, config, (progress) => {
                     progressBarFull.style.width = (100 * progress) + "%";
                 }).then((unityInstance) => {
-                    myGameInstance = unityInstance;
                     setTimeout(() => {
                         loadingBar.style.display = "none";
                     }, 500);
