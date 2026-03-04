@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Granny Game - Yandex SDK Version -->
+<!-- Granny Game - Force Continue -->
 
 <html lang="en-us">
 <head>
@@ -75,6 +75,13 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
+        
+        /* UKRYJ WSZYSTKIE UI ELEMENTY CONTINUE */
+        canvas + * { display: none !important; }
+        [class*="continue"] { display: none !important; }
+        [class*="Continue"] { display: none !important; }
+        [class*="ads"] { display: none !important; }
+        [class*="reward"] { display: none !important; }
     </style>
 </head>
 <body>
@@ -92,7 +99,6 @@
         // Yandex SDK Handler
         window.ysdk = null;
         
-        // Initialize Yandex SDK
         YaGames.init().then(ysdk => {
             window.ysdk = ysdk;
             console.log("✅ Yandex SDK initialized");
@@ -158,42 +164,28 @@
 
         // Funkcja do kontynuowania gry
         function continueGame() {
-            console.log("✅ AUTO CONTINUE - Gra kontynuuje się automatycznie!");
+            console.log("✅ Kontynuuję grę...");
             if (typeof myGameInstance !== 'undefined' && myGameInstance) {
-                // Wyślij do wszystkich możliwych targetów
-                const targets = [
-                    'GameManager', 'UIManager', 'Manager', 'GameController',
-                    'DeathScreen', 'ScreenManager', 'UI', 'MainController'
-                ];
-                
-                targets.forEach(obj => {
-                    try {
-                        myGameInstance.SendMessage(obj, 'ContinueGame');
-                        myGameInstance.SendMessage(obj, 'OnContinue');
-                        myGameInstance.SendMessage(obj, 'Continue');
-                    } catch (e) {}
-                });
+                // Spróbuj wszystkie możliwe metody
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => {
+                        myGameInstance.SendMessage('GameManager', 'ContinueGame');
+                        myGameInstance.SendMessage('UIManager', 'ContinueGame');
+                        myGameInstance.SendMessage('Manager', 'ContinueGame');
+                    }, i * 50);
+                }
             }
         }
 
-        // AUTO CONTINUE - symuluj kliknięcie co 100ms
-        let autoContinueInterval = null;
-        function startAutoContinue() {
-            if (autoContinueInterval) clearInterval(autoContinueInterval);
-            autoContinueInterval = setInterval(() => {
-                continueGame();
-            }, 100);
+        // Automatycznie wywoływaj continue każde 500ms
+        let continueTimer = null;
+        function startAutomate() {
+            if (continueTimer) clearInterval(continueTimer);
+            continueTimer = setInterval(continueGame, 500);
         }
 
-        // Słuchaj zmian w DOM - gdy pojawi się ekran continue
-        const observer = new MutationObserver(() => {
-            console.log("DOM zmienił się - spróbuję auto-continue");
-            startAutoContinue();
-        });
-
-        // Expose funkcji dla gry
+        // Expose funkcji
         window.continueGame = continueGame;
-        window.startAutoContinue = startAutoContinue;
 
         var buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
         var loaderUrl = buildUrl + "/Granny.loader.js";
@@ -227,24 +219,11 @@
                     }).then((unityInstance) => {
                         myGameInstance = unityInstance;
                         loadingBar.style.display = "none";
-                        console.log("✅ Gra załadowana pomyślnie!");
-                        
-                        // Uruchom auto-continue observer
-                        observer.observe(canvas, {
-                            childList: true,
-                            subtree: true,
-                            attributes: true,
-                            characterData: true
-                        });
-                        startAutoContinue();
+                        console.log("✅ Gra załadowana!");
+                        startAutomate();
                     }).catch((message) => {
                         console.error("❌ Błąd:", message);
-                        alert("Błąd ładowania gry: " + message);
                     });
-                };
-
-                script.onerror = () => {
-                    console.error("❌ Błąd załadowania skryptu");
                 };
 
                 document.body.appendChild(script);
@@ -253,7 +232,6 @@
             }
         }
 
-        // Załaduj grę gdy strona się załaduje
         window.addEventListener('load', initializeGame);
     </script>
 </body>
