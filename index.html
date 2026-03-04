@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Granny Game - GitHub Pages Version with Debug -->
+<!-- Granny Game - Clean Version (No Ads) -->
 
 <html lang="en-us">
 <head>
@@ -180,9 +180,24 @@
             }
         }
 
-        // Obsługa komunikatów z gry
+        // Obsługa komunikatów z gry/SDK
         window.addEventListener('message', (event) => {
             console.log('Message received from game:', event.data);
+            
+            // Obsłuż wiadomości SDK
+            if (event.data && event.data.source === 'YandexGamesSdk') {
+                console.log('SDK Message:', event.data.actionName);
+                
+                // Odpowiedź na SDK
+                if (event.ports && event.ports[0]) {
+                    event.ports[0].postMessage({
+                        type: 'response',
+                        success: true
+                    });
+                }
+            }
+            
+            // Obsłuż continue game
             if (event.data === 'continue_game' || event.data?.type === 'continue') {
                 continueGame();
             }
