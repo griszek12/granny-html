@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Granny Game on GitHub Pages -->
+<!-- Granny Game - Clean Version (No Ads) -->
 
 <html lang="en-us">
 <head>
@@ -9,37 +9,6 @@
     <meta name="robots" content="noindex, nofollow">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/TemplateData/style.css">
-    <script src="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/sdk.js"></script>
-    <!-- GameMonetize SDK Integration -->
-    <script type="text/javascript">
-        window.SDK_OPTIONS = {
-            gameId: "jp112o3o4hzgrnc7zaewjkrfk282pul8",
-            onEvent: function (a) {
-                switch (a.name) {
-                    case "SDK_GAME_PAUSE":
-                        console.log("Oyun duraklatıldı, ses kapatılıyor...");
-                        if (typeof myGameInstance !== 'undefined' && myGameInstance) {
-                            myGameInstance.SendMessage('AudioManager', 'MuteAudio');
-                        }
-                        break;
-                    case "SDK_GAME_START":
-                        console.log("Reklam bitti, oyun devam ediyor...");
-                        if (typeof myGameInstance !== 'undefined' && myGameInstance) {
-                            myGameInstance.SendMessage('AudioManager', 'UnmuteAudio');
-                        }
-                        break;
-                    case "SDK_READY":
-                        console.log("SDK hazır.");
-                        window.sdkReady = true;
-                        break;
-                }
-            }
-        };
-        (function (a, b, c) {
-            var d = a.getElementsByTagName(b)[0];
-            a.getElementById(c) || (a = a.createElement(b), a.id = c, a.src = "https://cdn.jsdelivr.net/gh/testamalame/sef@main/sedk.js", d.parentNode.insertBefore(a, d));
-        })(document, "script", "gamemonetize-sdk");
-    </script>
     <style>
         body {
             margin: 0;
@@ -111,8 +80,7 @@
     <div id="unity-container">
         <canvas id="unity-canvas" style="position: absolute; width: 100%; height: 100%"></canvas>
         <div id="unity-loading-bar">
-            <div id="unity-logo">
-            </div>
+            <div id="unity-logo"></div>
             <div id="unity-progress-bar-empty">
                 <div id="unity-progress-bar-full"></div>
             </div>
@@ -151,14 +119,12 @@
             return combinedBuffer;
         }
 
-        var container = document.querySelector("#unity-container");
         var canvas = document.querySelector("#unity-canvas");
         var loadingBar = document.querySelector("#unity-loading-bar");
         var progressBarFull = document.querySelector("#unity-progress-bar-full");
         var warningBanner = document.querySelector("#unity-warning");
 
         let myGameInstance = null;
-        let isAdShown = false;
 
         function unityShowBanner(msg, type) {
             function updateBannerVisibility() {
@@ -178,47 +144,15 @@
             updateBannerVisibility();
         }
 
-        // NAPRAWIONA FUNKCJA OBSŁUGI REKLAM
-        function showAdOnGameOver() {
-            console.log("showAdOnGameOver called");
-            console.log("sdkReady:", window.sdkReady);
-            console.log("typeof sdk:", typeof window.sdk);
-            
-            if (!isAdShown) {
-                // Sprawdź czy SDK jest dostępny
-                if (typeof window.sdk !== 'undefined' && window.sdk && typeof window.sdk.showBanner === 'function') {
-                    console.log("Showing banner via SDK");
-                    try {
-                        window.sdk.showBanner();
-                        isAdShown = true;
-                    } catch (e) {
-                        console.error("Error showing banner:", e);
-                        // Fallback - po prostu kontynuuj grę
-                        continueGame();
-                    }
-                } else if (typeof gapi !== 'undefined' && gapi.ads) {
-                    // Alternatywny SDK
-                    console.log("Trying alternative SDK");
-                    gapi.ads.showBanner();
-                    isAdShown = true;
-                } else {
-                    console.warn("SDK nie jest dostępny, kontynuuję grę");
-                    // Fallback - brak SDK, kontynuuj od razu
-                    continueGame();
-                }
-            }
-        }
-
-        // Funkcja do kontynuowania gry (wywoływana przez grę po kliknięciu continue)
+        // Funkcja do kontynuowania gry (bez reklam)
         function continueGame() {
-            console.log("Game continues");
+            console.log("✅ Gra kontynuuje się...");
             if (typeof myGameInstance !== 'undefined' && myGameInstance) {
                 myGameInstance.SendMessage('UIManager', 'ContinueGame');
             }
         }
 
-        // Exposure do okna globalnego żeby gra mogła je wywoływać
-        window.showAdOnGameOver = showAdOnGameOver;
+        // Udostępnij do okna globalnego
         window.continueGame = continueGame;
 
         var buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
@@ -226,6 +160,8 @@
 
         async function initializeGame() {
             try {
+                console.log("🎮 Ładowanie gry Granny...");
+                
                 const dataBuffer = await mergeUnityWebFiles(buildUrl, "Granny", 2, "data");
                 const wasmBuffer = await mergeUnityWebFiles(buildUrl, "Granny", 2, "wasm");
 
@@ -251,19 +187,27 @@
                     }).then((unityInstance) => {
                         myGameInstance = unityInstance;
                         loadingBar.style.display = "none";
-                        console.log("Gra załadowana pomyślnie");
+                        console.log("✅ Gra załadowana pomyślnie!");
                     }).catch((message) => {
-                        alert(message);
+                        console.error("❌ Błąd:", message);
+                        alert("Błąd ładowania gry: " + message);
                     });
+                };
+
+                script.onerror = () => {
+                    console.error("❌ Błąd załadowania skryptu");
+                    alert("Błąd załadowania. Spróbuj odświeżyć stronę.");
                 };
 
                 document.body.appendChild(script);
             } catch (error) {
-                console.error("Game initialization failed:", error);
+                console.error("❌ Błąd inicjalizacji:", error);
+                alert("Błąd inicjalizacji: " + error.message);
             }
         }
 
-        initializeGame();
+        // Załaduj grę gdy strona się załaduje
+        window.addEventListener('load', initializeGame);
     </script>
 </body>
 </html>
