@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<!-- Granny Game - GitHub Pages Version -->
+<!-- Granny Game - Clean Version (No Ads) -->
 
 <html lang="en-us">
 <head>
@@ -153,11 +153,23 @@
                 myGameInstance.SendMessage('GameManager', 'ContinueGame');
                 myGameInstance.SendMessage('UIManager', 'ContinueGame');
                 myGameInstance.SendMessage('Manager', 'ContinueGame');
+                myGameInstance.SendMessage('UIManager', 'OnContinuePressed');
+                myGameInstance.SendMessage('GameController', 'ContinueGame');
             }
         }
 
-        // Udostępnij do okna globalnego
+        // Obsługa komunikatów z gry
+        window.addEventListener('message', (event) => {
+            console.log('Message received:', event.data);
+            if (event.data === 'continue_game' || event.data.type === 'continue') {
+                continueGame();
+            }
+        });
+
+        // Expose funkcji dla gry
         window.continueGame = continueGame;
+        window.onContinueGame = continueGame;
+        window.ContinueGame = continueGame;
 
         var buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
         var loaderUrl = buildUrl + "/Granny.loader.js";
